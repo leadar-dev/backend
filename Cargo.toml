@@ -1,0 +1,39 @@
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2021"
+
+[lints.clippy]
+pedantic = "warn"
+unwrap_used = "deny"
+expect_used = "warn"
+panic = "warn"
+
+[dependencies]
+axum = { version = "0.7", features = ["json", "macros"] }
+axum-extra = { version = "0.9", features = ["cookie"] }
+tokio = { version = "1", features = ["full"] }
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "chrono", "macros", "rust_decimal"] }
+rust_decimal = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+thiserror = "2"
+anyhow = "1"
+lapin = "2"
+futures-lite = "2"
+envy = "0.4"
+uuid = { version = "1", features = ["v4", "serde"] }
+jsonwebtoken = "9"
+hmac = "0.12"
+sha2 = "0.10"
+hex = "0.4"
+tower-http = { version = "0.5", features = ["trace", "cors"] }
+axum-prometheus = "0.7"
+metrics = "0.23"
+time = { version = "0.3", features = ["serde"] }
+
+[dev-dependencies]
+tokio-test = "0.4"
