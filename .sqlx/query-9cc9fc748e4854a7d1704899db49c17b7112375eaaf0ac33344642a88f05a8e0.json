@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE categories c SET parent_id = p.id\n             FROM categories p\n             WHERE c.source = $1 AND c.external_id = $2\n               AND p.source = $1 AND p.external_id = $3",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9cc9fc748e4854a7d1704899db49c17b7112375eaaf0ac33344642a88f05a8e0"
+}

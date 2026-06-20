@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO categories (source, external_id, name)\n             VALUES ($1, $2, $3)\n             ON CONFLICT (source, external_id) DO UPDATE SET name = EXCLUDED.name",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Int4",
+        "Varchar"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5c3017f5546167d2c10712f508d538195194c491ec822f9c472c27c3b126a8cb"
+}
