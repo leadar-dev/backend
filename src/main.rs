@@ -124,6 +124,19 @@ async fn main() -> anyhow::Result<()> {
         });
     }
 
+    // Start z-score scheduler: recalculates every 30 minutes
+    {
+        let pool_clone = pool.clone();
+        tokio::spawn(async move {
+            loop {
+                if let Err(e) = services::analytics::calculate_zscores(&pool_clone).await {
+                    tracing::error!(err = %e, "z-score calculation failed");
+                }
+                tokio::time::sleep(tokio::time::Duration::from_secs(30 * 60)).await;
+            }
+        });
+    }
+
     let (prometheus_layer, metrics_handle) = PrometheusMetricLayer::pair();
 
     let jwt_secret = cfg.auth.jwt_secret.clone();
