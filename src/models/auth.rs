@@ -12,5 +12,6 @@ pub struct TelegramAuthData {
 
 #[derive(Debug, Clone)]
 pub struct AuthUser {
+    #[allow(dead_code)]
     pub telegram_id: i64,
 }

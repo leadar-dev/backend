@@ -38,6 +38,7 @@ fn init_tracing() {
 }
 
 #[tokio::main]
+#[allow(clippy::too_many_lines)]
 async fn main() -> anyhow::Result<()> {
     init_tracing();
 
@@ -132,7 +133,7 @@ async fn main() -> anyhow::Result<()> {
                 if let Err(e) = services::analytics::calculate_zscores(&pool_clone).await {
                     tracing::error!(err = %e, "z-score calculation failed");
                 }
-                tokio::time::sleep(tokio::time::Duration::from_secs(30 * 60)).await;
+                tokio::time::sleep(tokio::time::Duration::from_mins(30)).await;
             }
         });
     }

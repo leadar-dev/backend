@@ -20,12 +20,12 @@ impl Publisher {
     pub async fn new(broker_url: &str) -> anyhow::Result<Self> {
         let conn = Connection::connect(broker_url, ConnectionProperties::default())
             .await
-            .map_err(|e| anyhow::anyhow!("publisher broker connect failed: {}", e))?;
+            .map_err(|e| anyhow::anyhow!("publisher broker connect failed: {e}"))?;
 
         let channel = conn
             .create_channel()
             .await
-            .map_err(|e| anyhow::anyhow!("publisher channel create failed: {}", e))?;
+            .map_err(|e| anyhow::anyhow!("publisher channel create failed: {e}"))?;
 
         channel
             .exchange_declare(
@@ -38,7 +38,7 @@ impl Publisher {
                 FieldTable::default(),
             )
             .await
-            .map_err(|e| anyhow::anyhow!("exchange declare failed: {}", e))?;
+            .map_err(|e| anyhow::anyhow!("exchange declare failed: {e}"))?;
 
         Ok(Self { channel })
     }
@@ -67,7 +67,7 @@ impl Publisher {
         });
 
         let body = serde_json::to_vec(&envelope)
-            .map_err(|e| anyhow::anyhow!("serialize failed: {}", e))?;
+            .map_err(|e| anyhow::anyhow!("serialize failed: {e}"))?;
 
         self.channel
             .basic_publish(
@@ -79,9 +79,9 @@ impl Publisher {
                     .with_content_type("application/json".into()),
             )
             .await
-            .map_err(|e| anyhow::anyhow!("publish failed: {}", e))?
+            .map_err(|e| anyhow::anyhow!("publish failed: {e}"))?
             .await
-            .map_err(|e| anyhow::anyhow!("publish confirm failed: {}", e))?;
+            .map_err(|e| anyhow::anyhow!("publish confirm failed: {e}"))?;
 
         debug!(routing_key = ROUTING_KEY_WANT_NEW, "message published");
         Ok(())

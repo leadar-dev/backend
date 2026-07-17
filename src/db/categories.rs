@@ -30,7 +30,7 @@ pub async fn upsert_categories(pool: &PgPool, payload: &KworkCategoriesPayload) 
     }
 
     for cat in payload.categories.iter().filter(|c| c.parent_external_id.is_some()) {
-        let parent_ext_id = cat.parent_external_id.unwrap();
+        let Some(parent_ext_id) = cat.parent_external_id else { continue };
         let updated = sqlx::query!(
             "UPDATE categories c SET parent_id = p.id
              FROM categories p
