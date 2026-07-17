@@ -146,6 +146,8 @@ async fn main() -> anyhow::Result<()> {
         .route("/wants", get(handlers::wants::get_wants))
         .route("/wants/:id", get(handlers::wants::get_want_by_id))
         .route("/categories", get(handlers::categories::get_categories))
+        .route("/analytics/zscore", get(handlers::analytics::get_zscore))
+        .route("/analytics/heatmap", get(handlers::analytics::get_heatmap))
         .layer(axum_middleware::from_fn(
             move |jar, req, next| {
                 let secret = jwt_secret.clone();

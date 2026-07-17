@@ -4,6 +4,7 @@ use sqlx::PgPool;
 use tracing::instrument;
 
 use crate::errors::AppResult;
+use crate::models::analytics::{HeatmapRow, ZscoreRow};
 
 #[derive(Debug, sqlx::FromRow)]
 pub struct WantForScoring {
@@ -64,4 +65,51 @@ pub async fn upsert_scores(pool: &PgPool, scores: &[WantScore]) -> AppResult<u64
     .await?;
 
     Ok(result.rows_affected())
+}
+
+#[instrument(skip(pool), fields(category_id, limit, offset))]
+pub async fn list_zscore(
+    pool: &PgPool,
+    category_id: Option<i32>,
+    limit: i64,
+    offset: i64,
+) -> AppResult<Vec<ZscoreRow>> {
+    let rows = sqlx::query_as::<_, ZscoreRow>(
+        "SELECT
+            w.id AS want_id,
+            w.name,
+            w.url,
+            w.category_id,
+            w.price_limit,
+            ws.zscore_price,
+            ws.zscore_activity,
+            ws.calculated_at
+        FROM wants w
+        INNER JOIN want_scores ws ON ws.want_id = w.id
+        WHERE ($1::int IS NULL OR w.category_id = $1)
+        ORDER BY ws.zscore_price DESC NULLS LAST
+        LIMIT $2 OFFSET $3",
+    )
+    .bind(category_id)
+    .bind(limit)
+    .bind(offset)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
+}
+
+#[instrument(skip(pool))]
+pub async fn list_heatmap(pool: &PgPool) -> AppResult<Vec<HeatmapRow>> {
+    let rows = sqlx::query_as::<_, HeatmapRow>(
+        "SELECT
+            date_trunc('day', date_create) AS date,
+            COUNT(*) AS count
+        FROM wants
+        WHERE date_create > now() - interval '30 days'
+        GROUP BY date_trunc('day', date_create)
+        ORDER BY date ASC",
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
 }
