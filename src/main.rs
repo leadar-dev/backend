@@ -38,6 +38,7 @@ fn init_tracing() {
 }
 
 #[tokio::main]
+#[allow(clippy::too_many_lines)]
 async fn main() -> anyhow::Result<()> {
     init_tracing();
 
@@ -124,6 +125,19 @@ async fn main() -> anyhow::Result<()> {
         });
     }
 
+    // Start z-score scheduler: recalculates every 30 minutes
+    {
+        let pool_clone = pool.clone();
+        tokio::spawn(async move {
+            loop {
+                if let Err(e) = services::analytics::calculate_zscores(&pool_clone).await {
+                    tracing::error!(err = %e, "z-score calculation failed");
+                }
+                tokio::time::sleep(tokio::time::Duration::from_mins(30)).await;
+            }
+        });
+    }
+
     let (prometheus_layer, metrics_handle) = PrometheusMetricLayer::pair();
 
     let jwt_secret = cfg.auth.jwt_secret.clone();
@@ -132,6 +146,8 @@ async fn main() -> anyhow::Result<()> {
         .route("/wants", get(handlers::wants::get_wants))
         .route("/wants/:id", get(handlers::wants::get_want_by_id))
         .route("/categories", get(handlers::categories::get_categories))
+        .route("/analytics/zscore", get(handlers::analytics::get_zscore))
+        .route("/analytics/heatmap", get(handlers::analytics::get_heatmap))
         .layer(axum_middleware::from_fn(
             move |jar, req, next| {
                 let secret = jwt_secret.clone();

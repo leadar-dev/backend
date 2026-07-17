@@ -7,6 +7,7 @@ use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(transparent)]
+#[allow(dead_code)]
 pub struct WantId(pub i64);
 
 impl fmt::Display for WantId {
@@ -17,6 +18,7 @@ impl fmt::Display for WantId {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[allow(dead_code)]
 pub enum WantStatus {
     Active,
     Archive,
@@ -24,6 +26,7 @@ pub enum WantStatus {
 }
 
 impl WantStatus {
+    #[allow(dead_code)]
     pub fn as_str(&self) -> &'static str {
         match self {
             WantStatus::Active => "active",
@@ -53,6 +56,7 @@ impl std::str::FromStr for WantStatus {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[allow(dead_code)]
 pub enum Source {
     Kwork,
     Fl,
@@ -60,6 +64,7 @@ pub enum Source {
 }
 
 impl Source {
+    #[allow(dead_code)]
     pub fn as_str(&self) -> &'static str {
         match self {
             Source::Kwork => "kwork",

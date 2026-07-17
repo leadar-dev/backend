@@ -23,7 +23,7 @@ pub async fn start_categories_consumer(broker_url: &str, pool: PgPool) -> anyhow
     let channel = conn
         .create_channel()
         .await
-        .map_err(|e| anyhow::anyhow!("failed to create channel: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("failed to create channel: {e}"))?;
 
     setup_queue(&channel).await?;
 
@@ -35,7 +35,7 @@ pub async fn start_categories_consumer(broker_url: &str, pool: PgPool) -> anyhow
             FieldTable::default(),
         )
         .await
-        .map_err(|e| anyhow::anyhow!("failed to start consume: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("failed to start consume: {e}"))?;
 
     info!(queue = QUEUE_NAME, "categories consumer started");
 
@@ -101,7 +101,7 @@ async fn setup_queue(channel: &Channel) -> anyhow::Result<()> {
             FieldTable::default(),
         )
         .await
-        .map_err(|e| anyhow::anyhow!("queue declare failed: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("queue declare failed: {e}"))?;
 
     info!(queue = QUEUE_NAME, "categories queue ready");
     Ok(())
@@ -124,8 +124,6 @@ async fn connect_with_retry(broker_url: &str) -> anyhow::Result<Connection> {
         }
     }
     Err(anyhow::anyhow!(
-        "broker connect failed after {} attempts: {:?}",
-        MAX_RETRIES,
-        last_err
+        "broker connect failed after {MAX_RETRIES} attempts: {last_err:?}"
     ))
 }

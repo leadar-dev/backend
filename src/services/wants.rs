@@ -29,8 +29,7 @@ pub async fn upsert(pool: &PgPool, payload: &KworkWantPayload) -> AppResult<Upse
         .and_then(Decimal::from_f64_retain);
 
     let row: UpsertRow = sqlx::query_as::<_, UpsertRow>(
-        r#"
-        INSERT INTO wants (
+        "INSERT INTO wants (
             source, external_id, name, description,
             price_limit, possible_price_limit,
             category_id, max_days, status,
@@ -54,8 +53,7 @@ pub async fn upsert(pool: &PgPool, payload: &KworkWantPayload) -> AppResult<Upse
             date_expire          = EXCLUDED.date_expire,
             parsed_at            = now(),
             updated_at           = now()
-        RETURNING id, (xmax = 0) AS is_insert
-        "#,
+        RETURNING id, (xmax = 0) AS is_insert",
     )
     .bind(&payload.source)
     .bind(payload.want_id)
