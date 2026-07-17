@@ -14,6 +14,7 @@ pub enum AppError {
     WantNotFound(i64),
 
     #[error("category {0} not found")]
+    #[allow(dead_code)]
     CategoryNotFound(i32),
 
     #[error("unauthorized")]

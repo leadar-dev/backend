@@ -13,12 +13,12 @@ pub async fn start_dlq_consumer(broker_url: &str) -> anyhow::Result<()> {
     info!("connecting to broker for DLQ consumer");
     let conn = Connection::connect(broker_url, ConnectionProperties::default())
         .await
-        .map_err(|e| anyhow::anyhow!("DLQ broker connect failed: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("DLQ broker connect failed: {e}"))?;
 
     let channel = conn
         .create_channel()
         .await
-        .map_err(|e| anyhow::anyhow!("DLQ channel create failed: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("DLQ channel create failed: {e}"))?;
 
     for queue in [DLQ_BACKEND_WANTS, DLQ_BOT_NOTIFICATIONS] {
         channel
@@ -32,14 +32,14 @@ pub async fn start_dlq_consumer(broker_url: &str) -> anyhow::Result<()> {
             )
             .await
             .map_err(|e| {
-                anyhow::anyhow!("DLQ queue declare failed for {}: {}", queue, e)
+                anyhow::anyhow!("DLQ queue declare failed for {queue}: {e}")
             })?;
     }
 
     let channel2 = conn
         .create_channel()
         .await
-        .map_err(|e| anyhow::anyhow!("DLQ second channel create failed: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("DLQ second channel create failed: {e}"))?;
 
     tokio::try_join!(
         consume_dlq_queue(channel, DLQ_BACKEND_WANTS),
@@ -58,7 +58,7 @@ async fn consume_dlq_queue(channel: Channel, queue_name: &'static str) -> anyhow
             FieldTable::default(),
         )
         .await
-        .map_err(|e| anyhow::anyhow!("DLQ consume start failed: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("DLQ consume start failed: {e}"))?;
 
     info!(queue = queue_name, "DLQ consumer started");
 

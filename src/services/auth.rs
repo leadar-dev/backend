@@ -39,9 +39,8 @@ pub fn verify_telegram_auth(data: &TelegramAuthData, bot_token: &str) -> bool {
     let check_string = fields.join("\n");
 
     // HMAC-SHA256(check_string, secret_key)
-    let mut mac = match Hmac::<Sha256>::new_from_slice(&secret_key) {
-        Ok(m) => m,
-        Err(_) => return false,
+    let Ok(mut mac) = Hmac::<Sha256>::new_from_slice(&secret_key) else {
+        return false;
     };
     mac.update(check_string.as_bytes());
     let result = mac.finalize();
@@ -63,7 +62,7 @@ pub fn create_jwt(telegram_id: i64, secret: &str, expiry_hours: i64) -> AppResul
         &claims,
         &EncodingKey::from_secret(secret.as_bytes()),
     )
-    .map_err(|e| AppError::Internal(anyhow::anyhow!("JWT encode error: {}", e)))
+    .map_err(|e| AppError::Internal(anyhow::anyhow!("JWT encode error: {e}")))
 }
 
 /// Verify and decode a JWT, returning the claims.
@@ -81,13 +80,11 @@ pub fn verify_jwt(token: &str, secret: &str) -> AppResult<JwtClaims> {
 #[instrument(skip(pool), fields(telegram_id))]
 pub async fn upsert_user(pool: &PgPool, telegram_id: i64) -> AppResult<()> {
     sqlx::query(
-        r#"
-        INSERT INTO users (telegram_id, is_active)
+        "INSERT INTO users (telegram_id, is_active)
         VALUES ($1, true)
         ON CONFLICT (telegram_id) DO UPDATE SET
             is_active  = true,
-            updated_at = now()
-        "#,
+            updated_at = now()",
     )
     .bind(telegram_id)
     .execute(pool)
