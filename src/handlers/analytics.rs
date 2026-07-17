@@ -24,7 +24,7 @@ pub async fn get_zscore(
     Extension(_user): Extension<AuthUser>,
     Query(query): Query<ZscoreQuery>,
 ) -> AppResult<Json<serde_json::Value>> {
-    let limit = query.limit.unwrap_or(50).min(200).max(1);
+    let limit = query.limit.unwrap_or(50).clamp(1, 200);
     let offset = query.offset.unwrap_or(0).max(0);
 
     let rows = crate::db::analytics::list_zscore(&state.pool, query.category_id, limit, offset).await?;
