@@ -178,7 +178,6 @@ async fn main() -> anyhow::Result<()> {
         .layer(axum_middleware::from_fn(middleware::role::require_admin))
         .layer(axum_middleware::from_fn({
             let pool = pool.clone();
-            let jwt_secret_admin = jwt_secret_admin;
             move |jar, req, next| {
                 let secret = jwt_secret_admin.clone();
                 let pool = pool.clone();
