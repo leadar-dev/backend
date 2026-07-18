@@ -62,3 +62,11 @@ impl From<HeatmapRow> for HeatmapPoint {
         }
     }
 }
+
+#[derive(Debug, sqlx::FromRow, Serialize)]
+pub struct SummaryRow {
+    pub total_active: i64,
+    pub new_today: i64,
+    pub sources_count: i64,
+    pub categories_count: i64,
+}

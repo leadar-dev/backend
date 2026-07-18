@@ -148,12 +148,16 @@ async fn main() -> anyhow::Result<()> {
         .route("/categories", get(handlers::categories::get_categories))
         .route("/analytics/zscore", get(handlers::analytics::get_zscore))
         .route("/analytics/heatmap", get(handlers::analytics::get_heatmap))
-        .layer(axum_middleware::from_fn(
+        .route("/analytics/summary", get(handlers::analytics::get_summary))
+        .route("/users/me", get(handlers::users::get_users_me))
+        .layer(axum_middleware::from_fn({
+            let pool = pool.clone();
             move |jar, req, next| {
                 let secret = jwt_secret.clone();
-                crate::middleware::auth::require_auth_with_secret(jar, secret, req, next)
-            },
-        ));
+                let pool = pool.clone();
+                crate::middleware::auth::require_auth_with_secret(jar, secret, pool, req, next)
+            }
+        }));
 
     let app = Router::new()
         .route("/health", get(handlers::health::health))
