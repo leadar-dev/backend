@@ -149,7 +149,9 @@ async fn main() -> anyhow::Result<()> {
         .route("/categories", get(handlers::categories::get_categories))
         .route("/analytics/zscore", get(handlers::analytics::get_zscore))
         .route("/analytics/heatmap", get(handlers::analytics::get_heatmap))
+        .route("/analytics/summary", get(handlers::analytics::get_summary))
         .route("/users/me", get(handlers::users::get_users_me))
+        .route("/auth/refresh", post(handlers::auth::post_auth_refresh))
         .layer(axum_middleware::from_fn({
             let pool = pool.clone();
             move |jar, req, next| {
@@ -164,6 +166,14 @@ async fn main() -> anyhow::Result<()> {
         .route(
             "/admin/users/:telegram_id/access",
             patch(handlers::admin::patch_admin_user_access),
+        )
+        .route(
+            "/admin/feature-flags",
+            get(handlers::admin::get_admin_feature_flags),
+        )
+        .route(
+            "/admin/feature-flags/:name",
+            patch(handlers::admin::patch_admin_feature_flag),
         )
         .layer(axum_middleware::from_fn(middleware::role::require_admin))
         .layer(axum_middleware::from_fn({

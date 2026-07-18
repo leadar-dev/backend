@@ -6,7 +6,7 @@ use serde::Deserialize;
 use serde_json::json;
 use tracing::instrument;
 
-use crate::db::users as users_db;
+use crate::db::{feature_flags as flags_db, users as users_db};
 use crate::errors::{AppError, AppResult};
 use crate::models::auth::AuthUser;
 use crate::models::user::UserAdminResponse;
@@ -21,6 +21,11 @@ pub struct PaginationQuery {
 #[derive(Debug, Deserialize)]
 pub struct UpdateAccessBody {
     pub is_active: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateFlagBody {
+    pub enabled: bool,
 }
 
 #[instrument(skip(state, _user), fields(page = ?query.page, limit = ?query.limit))]
@@ -59,5 +64,28 @@ pub async fn patch_admin_user_access(
         ));
     }
 
+    Ok(Json(json!({ "ok": true, "data": null })))
+}
+
+#[instrument(skip(state, _user))]
+pub async fn get_admin_feature_flags(
+    State(state): State<AppState>,
+    Extension(_user): Extension<AuthUser>,
+) -> AppResult<Json<serde_json::Value>> {
+    let flags = flags_db::list_flags(&state.pool).await?;
+    Ok(Json(json!({ "ok": true, "data": flags })))
+}
+
+#[instrument(skip(state, _user), fields(flag = %name))]
+pub async fn patch_admin_feature_flag(
+    State(state): State<AppState>,
+    Extension(_user): Extension<AuthUser>,
+    Path(name): Path<String>,
+    Json(body): Json<UpdateFlagBody>,
+) -> AppResult<Json<serde_json::Value>> {
+    let updated = flags_db::update_flag(&state.pool, &name, body.enabled).await?;
+    if !updated {
+        return Err(AppError::InvalidRequest(format!("flag '{name}' not found")));
+    }
     Ok(Json(json!({ "ok": true, "data": null })))
 }
