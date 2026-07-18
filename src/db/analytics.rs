@@ -4,7 +4,7 @@ use sqlx::PgPool;
 use tracing::instrument;
 
 use crate::errors::AppResult;
-use crate::models::analytics::{HeatmapRow, ZscoreRow};
+use crate::models::analytics::{HeatmapRow, SummaryRow, ZscoreRow};
 
 #[derive(Debug, sqlx::FromRow)]
 pub struct WantForScoring {
@@ -96,6 +96,20 @@ pub async fn list_zscore(
     .fetch_all(pool)
     .await?;
     Ok(rows)
+}
+
+#[instrument(skip(pool))]
+pub async fn fetch_summary(pool: &PgPool) -> AppResult<SummaryRow> {
+    let row = sqlx::query_as::<_, SummaryRow>(
+        "SELECT
+            (SELECT COUNT(*) FROM wants WHERE status = 'active')::bigint               AS total_active,
+            (SELECT COUNT(*) FROM wants WHERE created_at >= date_trunc('day', now()))::bigint AS new_today,
+            (SELECT COUNT(DISTINCT source) FROM wants)::bigint                          AS sources_count,
+            (SELECT COUNT(*) FROM categories)::bigint                                  AS categories_count",
+    )
+    .fetch_one(pool)
+    .await?;
+    Ok(row)
 }
 
 #[instrument(skip(pool))]

@@ -34,6 +34,15 @@ pub async fn get_zscore(
 }
 
 #[instrument(skip(state, _user))]
+pub async fn get_summary(
+    State(state): State<AppState>,
+    Extension(_user): Extension<AuthUser>,
+) -> AppResult<Json<serde_json::Value>> {
+    let summary = crate::db::analytics::fetch_summary(&state.pool).await?;
+    Ok(Json(json!({ "ok": true, "data": summary })))
+}
+
+#[instrument(skip(state, _user))]
 pub async fn get_heatmap(
     State(state): State<AppState>,
     Extension(_user): Extension<AuthUser>,
