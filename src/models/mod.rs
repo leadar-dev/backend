@@ -2,4 +2,6 @@ pub mod analytics;
 pub mod auth;
 pub mod categories_event;
 pub mod category;
+pub mod feature_flag;
+pub mod user;
 pub mod want;
