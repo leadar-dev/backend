@@ -10,7 +10,7 @@ mod services;
 use std::sync::Arc;
 
 use anyhow::Context;
-use axum::{middleware as axum_middleware, routing::get, routing::post, Router};
+use axum::{middleware as axum_middleware, routing::{get, post}, Router};
 use axum_prometheus::PrometheusMetricLayer;
 use sqlx::postgres::PgPoolOptions;
 use tower_http::trace::TraceLayer;
@@ -150,6 +150,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/analytics/heatmap", get(handlers::analytics::get_heatmap))
         .route("/analytics/summary", get(handlers::analytics::get_summary))
         .route("/users/me", get(handlers::users::get_users_me))
+        .route("/auth/refresh", post(handlers::auth::post_auth_refresh))
         .layer(axum_middleware::from_fn({
             let pool = pool.clone();
             move |jar, req, next| {

@@ -1,4 +1,4 @@
-use axum::{extract::State, Json};
+use axum::{extract::State, Extension, Json};
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use axum_extra::extract::CookieJar;
 use chrono::Utc;
@@ -8,7 +8,7 @@ use tracing::{info, instrument, warn};
 
 use crate::db::users as users_db;
 use crate::errors::{AppError, AppResult};
-use crate::models::auth::TelegramAuthData;
+use crate::models::auth::{AuthUser, TelegramAuthData};
 use crate::services::auth as auth_service;
 use crate::AppState;
 
@@ -69,6 +69,33 @@ pub async fn post_auth_telegram(
     Ok((
         jar.add(cookie),
         Json(json!({ "ok": true, "data": { "telegram_id": body.id } })),
+    ))
+}
+
+pub async fn post_auth_refresh(
+    State(state): State<AppState>,
+    jar: CookieJar,
+    Extension(user): Extension<AuthUser>,
+) -> AppResult<(CookieJar, Json<serde_json::Value>)> {
+    let token = auth_service::create_jwt(
+        user.telegram_id,
+        &state.config.auth.jwt_secret,
+        state.config.auth.jwt_expiry_hours,
+    )?;
+
+    let cookie = Cookie::build(("token", token))
+        .http_only(true)
+        .secure(true)
+        .same_site(SameSite::Strict)
+        .max_age(Duration::hours(state.config.auth.jwt_expiry_hours))
+        .path("/")
+        .build();
+
+    info!(telegram_id = user.telegram_id, "token refreshed");
+
+    Ok((
+        jar.add(cookie),
+        Json(json!({ "ok": true, "data": null })),
     ))
 }
 
