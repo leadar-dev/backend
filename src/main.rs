@@ -165,6 +165,14 @@ async fn main() -> anyhow::Result<()> {
             "/admin/users/:telegram_id/access",
             patch(handlers::admin::patch_admin_user_access),
         )
+        .route(
+            "/admin/feature-flags",
+            get(handlers::admin::get_admin_feature_flags),
+        )
+        .route(
+            "/admin/feature-flags/:name",
+            patch(handlers::admin::patch_admin_feature_flag),
+        )
         .layer(axum_middleware::from_fn(middleware::role::require_admin))
         .layer(axum_middleware::from_fn({
             let pool = pool.clone();
