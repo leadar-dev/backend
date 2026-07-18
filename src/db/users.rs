@@ -53,3 +53,32 @@ pub async fn fetch_user(pool: &PgPool, telegram_id: i64) -> AppResult<Option<Use
     .await?;
     Ok(row)
 }
+
+pub async fn list_users(pool: &PgPool, limit: i64, offset: i64) -> AppResult<Vec<UserRow>> {
+    let rows = sqlx::query_as::<_, UserRow>(
+        "SELECT telegram_id, first_name, username, role, is_active, created_at, last_login
+         FROM users
+         ORDER BY created_at DESC
+         LIMIT $1 OFFSET $2",
+    )
+    .bind(limit)
+    .bind(offset)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
+}
+
+pub async fn update_user_access(
+    pool: &PgPool,
+    telegram_id: i64,
+    is_active: bool,
+) -> AppResult<bool> {
+    let result = sqlx::query(
+        "UPDATE users SET is_active = $1, updated_at = now() WHERE telegram_id = $2",
+    )
+    .bind(is_active)
+    .bind(telegram_id)
+    .execute(pool)
+    .await?;
+    Ok(result.rows_affected() > 0)
+}
