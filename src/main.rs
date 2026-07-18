@@ -10,7 +10,7 @@ mod services;
 use std::sync::Arc;
 
 use anyhow::Context;
-use axum::{middleware as axum_middleware, routing::{get, post}, Router};
+use axum::{middleware as axum_middleware, routing::{get, patch, post}, Router};
 use axum_prometheus::PrometheusMetricLayer;
 use sqlx::postgres::PgPoolOptions;
 use tower_http::trace::TraceLayer;
@@ -141,6 +141,7 @@ async fn main() -> anyhow::Result<()> {
     let (prometheus_layer, metrics_handle) = PrometheusMetricLayer::pair();
 
     let jwt_secret = cfg.auth.jwt_secret.clone();
+    let jwt_secret_admin = jwt_secret.clone();
 
     let protected_routes = Router::new()
         .route("/wants", get(handlers::wants::get_wants))
@@ -160,6 +161,31 @@ async fn main() -> anyhow::Result<()> {
             }
         }));
 
+    let admin_routes = Router::new()
+        .route("/admin/users", get(handlers::admin::get_admin_users))
+        .route(
+            "/admin/users/:telegram_id/access",
+            patch(handlers::admin::patch_admin_user_access),
+        )
+        .route(
+            "/admin/feature-flags",
+            get(handlers::admin::get_admin_feature_flags),
+        )
+        .route(
+            "/admin/feature-flags/:name",
+            patch(handlers::admin::patch_admin_feature_flag),
+        )
+        .layer(axum_middleware::from_fn(middleware::role::require_admin))
+        .layer(axum_middleware::from_fn({
+            let pool = pool.clone();
+            let jwt_secret_admin = jwt_secret_admin;
+            move |jar, req, next| {
+                let secret = jwt_secret_admin.clone();
+                let pool = pool.clone();
+                crate::middleware::auth::require_auth_with_secret(jar, secret, pool, req, next)
+            }
+        }));
+
     let app = Router::new()
         .route("/health", get(handlers::health::health))
         .route(
@@ -169,6 +195,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/auth/telegram", post(handlers::auth::post_auth_telegram))
         .route("/auth/logout", post(handlers::auth::post_auth_logout))
         .merge(protected_routes)
+        .merge(admin_routes)
         .layer(prometheus_layer)
         .layer(TraceLayer::new_for_http())
         .with_state(state);

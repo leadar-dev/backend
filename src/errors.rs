@@ -20,6 +20,9 @@ pub enum AppError {
     #[error("unauthorized")]
     Unauthorized,
 
+    #[error("forbidden")]
+    Forbidden,
+
     #[error("invalid request: {0}")]
     InvalidRequest(String),
 
@@ -49,6 +52,11 @@ impl IntoResponse for AppError {
                 StatusCode::UNAUTHORIZED,
                 "UNAUTHORIZED",
                 "unauthorized".to_string(),
+            ),
+            AppError::Forbidden => (
+                StatusCode::FORBIDDEN,
+                "FORBIDDEN",
+                "forbidden".to_string(),
             ),
             AppError::InvalidRequest(msg) => {
                 (StatusCode::BAD_REQUEST, "INVALID_REQUEST", msg.clone())

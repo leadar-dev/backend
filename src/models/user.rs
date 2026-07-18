@@ -34,3 +34,26 @@ impl From<UserRow> for UserMeResponse {
         }
     }
 }
+
+#[derive(Debug, Serialize)]
+pub struct UserAdminResponse {
+    pub telegram_id: i64,
+    pub first_name: Option<String>,
+    pub username: Option<String>,
+    pub role: String,
+    pub is_active: bool,
+    pub last_login: Option<DateTime<Utc>>,
+}
+
+impl From<UserRow> for UserAdminResponse {
+    fn from(row: UserRow) -> Self {
+        Self {
+            telegram_id: row.telegram_id,
+            first_name: row.first_name,
+            username: row.username,
+            role: row.role,
+            is_active: row.is_active,
+            last_login: row.last_login,
+        }
+    }
+}
