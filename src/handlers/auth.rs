@@ -6,7 +6,6 @@ use serde_json::json;
 use time::Duration;
 use tracing::{info, instrument, warn};
 
-use crate::db::users as users_db;
 use crate::errors::{AppError, AppResult};
 use crate::models::auth::TelegramAuthData;
 use crate::services::auth as auth_service;
@@ -18,38 +17,30 @@ pub async fn post_auth_telegram(
     jar: CookieJar,
     Json(body): Json<TelegramAuthData>,
 ) -> AppResult<(CookieJar, Json<serde_json::Value>)> {
+    // Check auth_date is not older than 24 hours
     let now = Utc::now().timestamp();
     if now - body.auth_date > 86400 {
         warn!(telegram_id = body.id, "auth_date too old");
         return Err(AppError::InvalidRequest("auth_date is too old".into()));
     }
 
+    // Verify Telegram HMAC
     if !auth_service::verify_telegram_auth(&body, &state.config.auth.bot_token) {
         warn!(telegram_id = body.id, "telegram auth verification failed");
         return Err(AppError::Unauthorized);
     }
 
+    // Check allowed IDs
     let allowed = state.config.allowed_telegram_ids();
-    let role = if allowed.contains(&body.id) {
-        "admin"
-    } else {
-        let existing = users_db::fetch_active_user(&state.pool, body.id).await?;
-        if existing.is_none() {
-            warn!(telegram_id = body.id, "user not in DB or not active");
-            return Err(AppError::Unauthorized);
-        }
-        "user"
-    };
+    if !allowed.contains(&body.id) {
+        warn!(telegram_id = body.id, "telegram_id not in allowed list");
+        return Err(AppError::Unauthorized);
+    }
 
-    users_db::upsert_user(
-        &state.pool,
-        body.id,
-        Some(&body.first_name),
-        body.username.as_deref(),
-        role,
-    )
-    .await?;
+    // Upsert user in DB
+    auth_service::upsert_user(&state.pool, body.id).await?;
 
+    // Issue JWT
     let token = auth_service::create_jwt(
         body.id,
         &state.config.auth.jwt_secret,
@@ -64,7 +55,7 @@ pub async fn post_auth_telegram(
         .path("/")
         .build();
 
-    info!(telegram_id = body.id, role, "user authenticated");
+    info!(telegram_id = body.id, "user authenticated");
 
     Ok((
         jar.add(cookie),
@@ -72,7 +63,9 @@ pub async fn post_auth_telegram(
     ))
 }
 
-pub async fn post_auth_logout(jar: CookieJar) -> (CookieJar, Json<serde_json::Value>) {
+pub async fn post_auth_logout(
+    jar: CookieJar,
+) -> (CookieJar, Json<serde_json::Value>) {
     let cookie = Cookie::build(("token", ""))
         .http_only(true)
         .secure(true)
